@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TrustedSky — Enrol Face</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container navbar-inner">
+    <a href="/index.html" class="logo" style="text-decoration:none">
+      <svg viewBox="0 0 28 28" fill="none"><path d="M14 3L25 8V14C25 19.5 20 24.2 14 26C8 24.2 3 14V8L14 3Z" stroke="#0ea5e9" stroke-width="2" fill="rgba(14,165,233,.1)"/><path d="M10 14l3 3 5-5" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Trusted<span>Sky</span>
+    </a>
+    <div class="nav-links">
+      <a href="/dashboard.html">Dashboard</a>
+      <div id="nav-user"></div>
+    </div>
+  </div>
+</nav>
+
+<div class="container page">
+  <!-- Steps -->
+  <div style="max-width:600px;margin:0 auto">
+    <div class="steps" id="steps">
+      <div class="step active" id="step-1">
+        <div class="step-dot">1</div>
+        <div class="step-label">Prepare</div>
+      </div>
+      <div class="step" id="step-2">
+        <div class="step-dot">2</div>
+        <div class="step-label">Scan</div>
+      </div>
+      <div class="step" id="step-3">
+        <div class="step-dot">3</div>
+        <div class="step-label">Done</div>
+      </div>
+    </div>
+
+    <!-- Step 1: Prepare -->
+    <div id="panel-1" class="card">
+      <div class="card-header">
+        <h2>Enrol your face</h2>
+        <p>Take 60 seconds to set up biometric access for all your future flights.</p>
+      </div>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:.75rem;margin-bottom:1.5rem">
+        <li style="display:flex;align-items:center;gap:.75rem">
+          <span style="background:var(--blue);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.8rem">💡</span>
+          <span>Find good, even lighting — avoid strong backlight</span>
+        </li>
+        <li style="display:flex;align-items:center;gap:.75rem">
+          <span style="background:var(--blue);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.8rem">👓</span>
+          <span>Remove glasses and hats for best results</span>
+        </li>
+        <li style="display:flex;align-items:center;gap:.75rem">
+          <span style="background:var(--blue);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.8rem">📱</span>
+          <span>Hold your device at eye level, face clearly visible</span>
+        </li>
+      </ul>
+      <button class="btn btn-primary btn-lg btn-full" onclick="startEnrol()">
+        Start face enrolment →
+      </button>
+    </div>
+
+    <!-- Step 2: Scan -->
+    <div id="panel-2" class="card hidden">
+      <div class="card-header">
+        <h2>Look at the camera</h2>
+        <p>Keep your face centred in the circle. The scan takes about 3 seconds.</p>
+      </div>
+
+      <div id="scan-container" style="display:flex;flex-direction:column;align-items:center;gap:1.5rem">
+        <div class="camera-box" id="cam-box">
+          <video id="scan-video" autoplay muted playsinline></video>
+          <canvas id="scan-canvas"></canvas>
+          <div class="scan-ring" id="scan-ring"></div>
+        </div>
+
+        <div class="scan-status">
+          <div class="status-icon" id="scan-icon">⏳</div>
+          <div class="status-text" id="scan-text">Loading face recognition models…</div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:center;gap:.5rem">
+          <div id="progress-bar" style="width:280px;height:6px;background:var(--border);border-radius:999px;overflow:hidden">
+            <div id="progress-fill" style="height:100%;width:0%;background:var(--blue);transition:width .3s;border-radius:999px"></div>
+          </div>
+          <span id="progress-label" style="font-size:.8rem;color:var(--text-muted)">Initialising…</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Done -->
+    <div id="panel-3" class="card hidden" style="text-align:center">
+      <div style="font-size:4rem;margin-bottom:1rem">🎉</div>
+      <h2 style="margin-bottom:.5rem">Enrolment complete!</h2>
+      <p class="mb-3">Your biometric profile is ready. You can now use face scanning at check-in, gates, and boarding.</p>
+      <div id="enrol-summary" class="card card-sm" style="text-align:left;margin-bottom:1.5rem;background:var(--bg2)"></div>
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+        <a href="/dashboard.html" class="btn btn-primary btn-lg">Go to Dashboard</a>
+        <a href="/checkin.html"   class="btn btn-ghost btn-lg">Check in now</a>
+      </div>
+    </div>
+
+    <!-- Error panel -->
+    <div id="panel-error" class="card hidden" style="text-align:center">
+      <div style="font-size:3rem;margin-bottom:1rem">⚠️</div>
+      <h2 style="margin-bottom:.5rem">Enrolment failed</h2>
+      <p class="mb-3" id="error-msg">An error occurred.</p>
+      <button class="btn btn-primary" onclick="retry()">Try again</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/camera.js"></script>
+<script>
+  requireAuth();
+  updateNavUser();
+
+  let cameraStream = null;
+  let scanSession  = null;
+
+  function setStep(n) {
+    [1,2,3].forEach(i => {
+      const s = document.getElementById(`step-${i}`);
+      s.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
+      if (i < n) s.querySelector('.step-dot').textContent = '✓';
+    });
+    document.querySelectorAll('[id^="panel-"]').forEach(p => p.classList.add('hidden'));
+  }
+
+  async function startEnrol() {
+    setStep(2);
+    document.getElementById('panel-2').classList.remove('hidden');
+    setScanText('⏳', 'Loading face recognition models…', 0);
+
+    try {
+      await FaceEngine.loadModels();
+      setScanText('📷', 'Starting camera…', 10);
+
+      cameraStream = await FaceEngine.startCamera(document.getElementById('scan-video'));
+      setScanText('👁️', 'Position your face in the circle', 15);
+
+      document.getElementById('scan-ring').classList.add('active');
+
+      scanSession = createScanSession({
+        videoEl:    document.getElementById('scan-video'),
+        canvasEl:   document.getElementById('scan-canvas'),
+        ringEl:     document.getElementById('scan-ring'),
+        onStatus:   (msg, state) => {
+          const pct = state === 'scanning' ? parseInt(msg.match(/(\d+)%/)?.[1] || 15) + 15 : 15;
+          setScanText('👁️', msg, pct);
+        },
+        onDescriptor: handleDescriptor,
+        onError:    showError,
+      });
+
+    } catch (err) {
+      showError(err.message || String(err));
+    }
+  }
+
+  async function handleDescriptor(descriptor) {
+    stopCamera();
+    setScanText('🔄', 'Saving biometric profile…', 90);
+    try {
+      await api.enrollFace(descriptor);
+      setScanText('✅', 'Enrolment complete!', 100);
+
+      const me = await api.getMe();
+      setStep(3);
+      document.getElementById('panel-3').classList.remove('hidden');
+      document.getElementById('enrol-summary').innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:.5rem">
+          <div style="display:flex;justify-content:space-between">
+            <span class="text-muted">Passenger</span>
+            <span>${me.first_name} ${me.last_name}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span class="text-muted">Frequent Flyer</span>
+            <span class="font-mono">${me.frequent_flyer_number}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span class="text-muted">Tier</span>
+            <span>${tierBadge(me.tier)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span class="text-muted">Face enrolled</span>
+            <span class="text-green">✓ Active</span>
+          </div>
+        </div>
+      `;
+    } catch (err) {
+      showError(err.message);
+    }
+  }
+
+  function setScanText(icon, text, pct) {
+    document.getElementById('scan-icon').textContent = icon;
+    document.getElementById('scan-text').textContent = text;
+    document.getElementById('progress-fill').style.width = `${pct}%`;
+    document.getElementById('progress-label').textContent = text;
+  }
+
+  function stopCamera() {
+    if (scanSession) { scanSession.stop(); scanSession = null; }
+    FaceEngine.stopCamera(cameraStream);
+    document.getElementById('scan-ring').classList.remove('active');
+  }
+
+  function showError(msg) {
+    stopCamera();
+    setStep(2);
+    document.getElementById('panel-error').classList.remove('hidden');
+    document.getElementById('error-msg').textContent = msg;
+  }
+
+  function retry() {
+    document.getElementById('panel-error').classList.add('hidden');
+    startEnrol();
+  }
+</script>
+</body>
+</html>

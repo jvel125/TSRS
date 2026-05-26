@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TrustedSky — Face Check-in</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container navbar-inner">
+    <a href="/index.html" class="logo" style="text-decoration:none">
+      <svg viewBox="0 0 28 28" fill="none"><path d="M14 3L25 8V14C25 19.5 20 24.2 14 26C8 24.2 3 14V8L14 3Z" stroke="#0ea5e9" stroke-width="2" fill="rgba(14,165,233,.1)"/><path d="M10 14l3 3 5-5" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Trusted<span>Sky</span>
+    </a>
+    <div class="nav-links">
+      <a href="/dashboard.html">Dashboard</a>
+      <a href="/checkin.html" class="active">Check-in</a>
+      <div id="nav-user"></div>
+    </div>
+  </div>
+</nav>
+
+<div class="container page">
+  <div style="max-width:680px;margin:0 auto">
+    <div style="margin-bottom:2rem">
+      <h1>Face Check-in</h1>
+      <p>Look directly at the camera. The system will identify you and check you in automatically.</p>
+    </div>
+
+    <div class="grid-2" style="align-items:start">
+
+      <!-- Scanner card -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Biometric scan</h3>
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:center;gap:1.25rem">
+          <div class="camera-box" id="cam-box">
+            <video id="scan-video" autoplay muted playsinline></video>
+            <canvas id="scan-canvas"></canvas>
+            <div class="scan-ring hidden" id="scan-ring"></div>
+          </div>
+
+          <div class="scan-status">
+            <div class="status-icon" id="scan-icon">📷</div>
+            <div class="status-text" id="scan-text">Press Scan to begin</div>
+          </div>
+
+          <button class="btn btn-primary btn-lg btn-full" id="scan-btn" onclick="startScan()">
+            <span id="scan-btn-icon">👁</span>
+            <span id="scan-btn-label">Begin face scan</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Status / boarding pass card -->
+      <div>
+        <div class="card mb-2" id="status-card">
+          <h3 style="margin-bottom:.75rem">Status</h3>
+          <div id="status-body" style="color:var(--text-muted);font-size:.875rem">
+            Scan your face to check in for your upcoming flight.
+          </div>
+        </div>
+
+        <div id="boarding-pass-card" class="hidden"></div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="card mt-3" style="background:var(--bg2)">
+      <div style="display:flex;gap:.75rem;align-items:start">
+        <span style="font-size:1.25rem;margin-top:.1rem">ℹ️</span>
+        <div>
+          <h3 style="margin-bottom:.4rem">How it works</h3>
+          <p style="font-size:.875rem">Your camera captures a live frame, extracts a 128-point face descriptor entirely in your browser, and sends it to the TrustedSky server over an encrypted connection. No photo is stored — only the biometric embedding you enrolled.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Access result overlay -->
+<div class="access-result" id="result-overlay">
+  <div class="result-card" id="result-card">
+    <div class="result-icon" id="result-icon"></div>
+    <div class="result-name" id="result-name"></div>
+    <div class="result-sub" id="result-sub"></div>
+    <div id="result-confidence" style="margin-bottom:1.5rem"></div>
+    <button class="btn btn-ghost" onclick="closeResult()">Continue</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/camera.js"></script>
+<script>
+  requireAuth();
+  updateNavUser();
+
+  let cameraStream = null;
+  let scanSession  = null;
+  let scanning     = false;
+
+  async function startScan() {
+    if (scanning) return;
+    scanning = true;
+
+    const btn  = document.getElementById('scan-btn');
+    const ring = document.getElementById('scan-ring');
+    btn.disabled = true;
+    document.getElementById('scan-btn-label').textContent = 'Scanning…';
+    ring.classList.remove('hidden');
+    ring.classList.add('active');
+
+    try {
+      await FaceEngine.loadModels();
+      setScanText('📷', 'Starting camera…');
+
+      cameraStream = await FaceEngine.startCamera(document.getElementById('scan-video'));
+      setScanText('👁️', 'Look directly at the camera…');
+
+      scanSession = createScanSession({
+        videoEl:      document.getElementById('scan-video'),
+        canvasEl:     document.getElementById('scan-canvas'),
+        ringEl:       ring,
+        onStatus:     (msg) => setScanText('👁️', msg),
+        onDescriptor: handleDescriptor,
+        onError:      (msg) => { setScanText('⚠️', msg); resetBtn(); },
+      });
+    } catch (err) {
+      setScanText('⚠️', err.message || 'Camera error');
+      resetBtn();
+    }
+  }
+
+  async function handleDescriptor(descriptor) {
+    stopCamera();
+    setScanText('🔄', 'Identifying…');
+
+    try {
+      const result = await api.gateAccess(descriptor, 'Check-in Kiosk', 'CHECKIN');
+      showResult(result);
+      updateStatusCard(result);
+
+      if (result.granted && result.booking) {
+        renderBoardingPass(result);
+      }
+    } catch (err) {
+      setScanText('⚠️', err.message);
+    } finally {
+      resetBtn();
+    }
+  }
+
+  function showResult(result) {
+    const overlay = document.getElementById('result-overlay');
+    const card    = document.getElementById('result-card');
+    document.getElementById('result-icon').textContent = result.granted ? '✅' : '❌';
+    document.getElementById('result-name').textContent = result.granted
+      ? `${result.first_name} ${result.last_name}`
+      : 'Not recognised';
+    document.getElementById('result-sub').textContent  = result.message;
+    document.getElementById('result-confidence').innerHTML =
+      `<div style="display:flex;justify-content:center">${confidenceRingHtml(result.confidence)}</div>`;
+    card.className = `result-card ${result.granted ? 'granted' : 'denied'}`;
+    overlay.classList.add('open');
+  }
+
+  function closeResult() {
+    document.getElementById('result-overlay').classList.remove('open');
+  }
+
+  function updateStatusCard(result) {
+    const body = document.getElementById('status-body');
+    if (result.granted) {
+      body.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:.5rem">
+          <div class="badge badge-success" style="align-self:start">✓ Checked in</div>
+          <div style="font-size:1rem;font-weight:600;margin:.25rem 0">${result.first_name} ${result.last_name}</div>
+          <div style="display:flex;justify-content:space-between;font-size:.8rem">
+            <span class="text-muted">FFN</span><span class="font-mono">${result.frequent_flyer_number}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.8rem">
+            <span class="text-muted">Tier</span>${tierBadge(result.tier)}
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.8rem">
+            <span class="text-muted">Confidence</span><span class="text-green">${Math.round(result.confidence*100)}%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.8rem">
+            <span class="text-muted">Message</span><span>${result.message}</span>
+          </div>
+        </div>`;
+    } else {
+      body.innerHTML = `
+        <div class="badge badge-error" style="align-self:start;display:inline-flex">✕ Failed</div>
+        <p class="mt-1 text-red" style="font-size:.875rem">${result.message}</p>
+      `;
+    }
+  }
+
+  function renderBoardingPass(result) {
+    const b = result.booking;
+    const f = b.flight;
+    const bpCard = document.getElementById('boarding-pass-card');
+    bpCard.classList.remove('hidden');
+    bpCard.innerHTML = `
+      <div class="boarding-pass">
+        <div class="bp-header">
+          <span class="airline">${f.airline}</span>
+          ${statusBadge(b.status)}
+        </div>
+        <div class="bp-route">
+          <div>
+            <div class="bp-iata">${f.origin}</div>
+            <div style="font-size:.75rem;color:rgba(255,255,255,.6)">${formatDate(f.departure_time)}</div>
+          </div>
+          <div class="bp-arrow"></div>
+          <div style="text-align:right">
+            <div class="bp-iata">${f.destination}</div>
+            <div style="font-size:.75rem;color:rgba(255,255,255,.6)">${formatDate(f.arrival_time)}</div>
+          </div>
+        </div>
+        <div class="bp-details">
+          <div class="bp-field"><label>Flight</label><span>${f.flight_number}</span></div>
+          <div class="bp-field"><label>Seat</label><span>${b.seat_number}</span></div>
+          <div class="bp-field"><label>Class</label><span>${b.seat_class}</span></div>
+          <div class="bp-field"><label>Departure</label><span>${formatTime(f.departure_time)}</span></div>
+          <div class="bp-field"><label>Gate</label><span>${f.gate || '—'}</span></div>
+          <div class="bp-field"><label>Terminal</label><span>${f.terminal || '—'}</span></div>
+        </div>
+        <div class="bp-barcode">
+          ${b.boarding_pass_code}<br>
+          <small style="font-size:.6rem;letter-spacing:4px">||||||||| ||||| ||||||||||||</small>
+        </div>
+      </div>
+    `;
+  }
+
+  function setScanText(icon, text) {
+    document.getElementById('scan-icon').textContent = icon;
+    document.getElementById('scan-text').textContent = text;
+  }
+
+  function stopCamera() {
+    if (scanSession) { scanSession.stop(); scanSession = null; }
+    FaceEngine.stopCamera(cameraStream);
+    cameraStream = null;
+  }
+
+  function resetBtn() {
+    scanning = false;
+    const btn = document.getElementById('scan-btn');
+    btn.disabled = false;
+    document.getElementById('scan-btn-label').textContent = 'Scan again';
+    document.getElementById('scan-ring').classList.remove('active');
+  }
+</script>
+</body>
+</html>

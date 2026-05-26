@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TrustedSky — Biometric Airport Access</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="container navbar-inner">
+    <a href="/index.html" class="logo" style="text-decoration:none">
+      <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14 3L25 8V14C25 19.5 20 24.2 14 26C8 24.2 3 19.5 3 14V8L14 3Z" stroke="#0ea5e9" stroke-width="2" fill="rgba(14,165,233,.1)"/>
+        <path d="M10 14l3 3 5-5" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Trusted<span>Sky</span>
+    </a>
+    <div class="nav-links">
+      <a href="/index.html" class="active">Home</a>
+      <div id="nav-user"></div>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <h1>Skip the queue.<br><span>Your face is your passport.</span></h1>
+    <p>Enrol once, travel forever faster. TrustedSky's biometric system lets frequent flyers check in, pass through gates, and board — just by looking at a camera.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-primary btn-lg" onclick="showLogin()">Sign in</button>
+      <button class="btn btn-ghost btn-lg" onclick="showRegister()">Create account</button>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section style="padding:4rem 0;border-top:1px solid var(--border)">
+  <div class="container">
+    <div class="grid-3">
+      <div class="card" style="text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:1rem">✈️</div>
+        <h3>Instant Check-in</h3>
+        <p class="mt-1">Walk up to any kiosk, look at the camera, and you're checked in in under 3 seconds.</p>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:1rem">🛂</div>
+        <h3>Gate Access</h3>
+        <p class="mt-1">Biometric gate readers verify your identity instantly — no boarding pass, no fumbling.</p>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:1rem">🔐</div>
+        <h3>Bank-grade Security</h3>
+        <p class="mt-1">128-dimensional face embeddings encrypted at rest. Revoke your biometric data at any time.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Auth modals -->
+<div class="overlay" id="modal-login">
+  <div class="modal">
+    <h2 style="margin-bottom:1.5rem">Sign in</h2>
+    <form id="form-login" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label>Email</label>
+        <input class="form-control" type="email" id="login-email" placeholder="you@email.com" required>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input class="form-control" type="password" id="login-password" placeholder="••••••••" required>
+      </div>
+      <div id="login-err" class="alert alert-error hidden mb-2"></div>
+      <button type="submit" class="btn btn-primary btn-full btn-lg" id="login-btn">
+        <div class="spinner hidden" id="login-spinner"></div>
+        Sign in
+      </button>
+    </form>
+    <p class="text-center mt-2" style="font-size:.875rem">
+      No account? <a href="#" onclick="showRegister()">Create one</a>
+    </p>
+    <p class="text-center mt-1 text-muted" style="font-size:.8rem">
+      Demo — email: <code>demo@trustedsky.com</code> pw: <code>demo1234</code>
+    </p>
+    <button class="btn btn-ghost btn-sm mt-3" onclick="closeModal('modal-login')">Cancel</button>
+  </div>
+</div>
+
+<div class="overlay" id="modal-register">
+  <div class="modal">
+    <h2 style="margin-bottom:1.5rem">Create account</h2>
+    <form id="form-register" onsubmit="handleRegister(event)">
+      <div class="grid-2" style="gap:.75rem">
+        <div class="form-group">
+          <label>First name</label>
+          <input class="form-control" id="reg-first" placeholder="Alex" required>
+        </div>
+        <div class="form-group">
+          <label>Last name</label>
+          <input class="form-control" id="reg-last" placeholder="Morgan" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input class="form-control" type="email" id="reg-email" placeholder="you@email.com" required>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input class="form-control" type="password" id="reg-pw" placeholder="Min 8 characters" required minlength="8">
+      </div>
+      <div class="form-group">
+        <label>Passport number</label>
+        <input class="form-control" id="reg-passport" placeholder="P12345678" required>
+      </div>
+      <div id="reg-err" class="alert alert-error hidden mb-2"></div>
+      <button type="submit" class="btn btn-primary btn-full btn-lg" id="reg-btn">
+        <div class="spinner hidden" id="reg-spinner"></div>
+        Create account
+      </button>
+    </form>
+    <button class="btn btn-ghost btn-sm mt-3" onclick="closeModal('modal-register')">Cancel</button>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/ui.js"></script>
+<script>
+  updateNavUser();
+
+  // Redirect if already logged in
+  if (store.isLoggedIn()) window.location.href = '/dashboard.html';
+
+  function showLogin()    { openModal('modal-login'); }
+  function showRegister() { closeModal('modal-login'); openModal('modal-register'); }
+
+  function openModal(id)  { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('login-btn');
+    const sp  = document.getElementById('login-spinner');
+    const err = document.getElementById('login-err');
+    err.classList.add('hidden');
+    btn.disabled = true; sp.classList.remove('hidden');
+    try {
+      const token = await api.login({
+        email: document.getElementById('login-email').value.trim(),
+        password: document.getElementById('login-password').value,
+      });
+      api.saveSession(token);
+      window.location.href = '/dashboard.html';
+    } catch(ex) {
+      err.textContent = ex.message;
+      err.classList.remove('hidden');
+      btn.disabled = false; sp.classList.add('hidden');
+    }
+  }
+
+  async function handleRegister(e) {
+    e.preventDefault();
+    const btn = document.getElementById('reg-btn');
+    const sp  = document.getElementById('reg-spinner');
+    const err = document.getElementById('reg-err');
+    err.classList.add('hidden');
+    btn.disabled = true; sp.classList.remove('hidden');
+    try {
+      const token = await api.register({
+        first_name: document.getElementById('reg-first').value.trim(),
+        last_name:  document.getElementById('reg-last').value.trim(),
+        email:      document.getElementById('reg-email').value.trim(),
+        password:   document.getElementById('reg-pw').value,
+        passport_number: document.getElementById('reg-passport').value.trim().toUpperCase(),
+      });
+      api.saveSession(token);
+      window.location.href = '/enroll.html';
+    } catch(ex) {
+      err.textContent = ex.message;
+      err.classList.remove('hidden');
+      btn.disabled = false; sp.classList.add('hidden');
+    }
+  }
+
+  // Close modal on backdrop click
+  document.querySelectorAll('.overlay').forEach(el => {
+    el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+  });
+</script>
+</body>
+</html>

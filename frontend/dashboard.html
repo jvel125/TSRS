@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TrustedSky — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container navbar-inner">
+    <a href="/index.html" class="logo" style="text-decoration:none">
+      <svg viewBox="0 0 28 28" fill="none"><path d="M14 3L25 8V14C25 19.5 20 24.2 14 26C8 24.2 3 14V8L14 3Z" stroke="#0ea5e9" stroke-width="2" fill="rgba(14,165,233,.1)"/><path d="M10 14l3 3 5-5" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Trusted<span>Sky</span>
+    </a>
+    <div class="nav-links">
+      <a href="/dashboard.html" class="active">Dashboard</a>
+      <a href="/checkin.html">Check-in</a>
+      <a href="/gate.html">Gate</a>
+      <a href="/boarding.html">Boarding</a>
+      <div id="nav-user"></div>
+    </div>
+  </div>
+</nav>
+
+<div class="container page">
+
+  <!-- Greeting + profile strip -->
+  <div class="card mb-3" style="background:linear-gradient(135deg,var(--surface2) 0%,var(--bg2) 100%)">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+      <div>
+        <h1 id="greeting" style="font-size:1.6rem">Welcome back</h1>
+        <div style="display:flex;align-items:center;gap:.75rem;margin-top:.4rem">
+          <span id="tier-badge"></span>
+          <span class="font-mono text-muted" id="ffn-display" style="font-size:.85rem"></span>
+        </div>
+      </div>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+        <a href="/checkin.html"  class="btn btn-primary">✈ Check in</a>
+        <a href="/gate.html"     class="btn btn-ghost">🛂 Gate access</a>
+        <a href="/boarding.html" class="btn btn-ghost">🚪 Board</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Biometric status banner (shown if not enrolled) -->
+  <div id="enrol-banner" class="alert alert-info mb-3 hidden">
+    <span>🔐</span>
+    <span>Your biometric profile is not yet set up.
+      <a href="/enroll.html" style="color:var(--blue);font-weight:600">Enrol now →</a>
+    </span>
+  </div>
+
+  <div class="grid-2">
+
+    <!-- Upcoming flights -->
+    <div>
+      <h2 class="mb-2">Upcoming flights</h2>
+      <div id="bookings-list">
+        <div class="card" style="text-align:center;color:var(--text-muted)">
+          <div class="spinner" style="margin:0 auto .75rem"></div>
+          Loading…
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column -->
+    <div style="display:flex;flex-direction:column;gap:1.5rem">
+
+      <!-- Quick actions -->
+      <div>
+        <h2 class="mb-2">Quick actions</h2>
+        <div style="display:flex;flex-direction:column;gap:.75rem">
+          <a href="/checkin.html" class="card card-sm" style="text-decoration:none;display:flex;align-items:center;gap:.875rem;transition:border-color .2s" onmouseenter="this.style.borderColor='var(--blue)'" onmouseleave="this.style.borderColor=''">
+            <span style="font-size:1.75rem">✈️</span>
+            <div>
+              <div style="font-weight:600">Face Check-in</div>
+              <div style="font-size:.8rem;color:var(--text-muted)">Scan to check in for your next flight</div>
+            </div>
+          </a>
+          <a href="/gate.html" class="card card-sm" style="text-decoration:none;display:flex;align-items:center;gap:.875rem;transition:border-color .2s" onmouseenter="this.style.borderColor='var(--blue)'" onmouseleave="this.style.borderColor=''">
+            <span style="font-size:1.75rem">🛂</span>
+            <div>
+              <div style="font-weight:600">Gate Access</div>
+              <div style="font-size:.8rem;color:var(--text-muted)">Scan at the gate reader</div>
+            </div>
+          </a>
+          <a href="/boarding.html" class="card card-sm" style="text-decoration:none;display:flex;align-items:center;gap:.875rem;transition:border-color .2s" onmouseenter="this.style.borderColor='var(--green)'" onmouseleave="this.style.borderColor=''">
+            <span style="font-size:1.75rem">🚪</span>
+            <div>
+              <div style="font-weight:600">Board Flight</div>
+              <div style="font-size:.8rem;color:var(--text-muted)">Scan to board at the jetway</div>
+            </div>
+          </a>
+          <a href="/enroll.html" class="card card-sm" style="text-decoration:none;display:flex;align-items:center;gap:.875rem;transition:border-color .2s" onmouseenter="this.style.borderColor='var(--amber)'" onmouseleave="this.style.borderColor=''">
+            <span style="font-size:1.75rem">🔐</span>
+            <div>
+              <div style="font-weight:600" id="enrol-action-label">Update biometrics</div>
+              <div style="font-size:.8rem;color:var(--text-muted)">Re-enrol or revoke your face data</div>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Recent access log -->
+      <div>
+        <h2 class="mb-2">Recent activity</h2>
+        <div class="card">
+          <div id="logs-list">
+            <div style="text-align:center;color:var(--text-muted);font-size:.875rem">
+              <div class="spinner" style="margin:0 auto .5rem"></div>Loading…
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/ui.js"></script>
+<script>
+  requireAuth();
+  updateNavUser();
+
+  (async () => {
+    try {
+      const [me, bookings, logs] = await Promise.all([
+        api.getMe(), api.myBookings(), api.myLogs(8),
+      ]);
+
+      document.getElementById('greeting').textContent = `Welcome back, ${me.first_name}`;
+      document.getElementById('tier-badge').innerHTML = tierBadge(me.tier);
+      document.getElementById('ffn-display').textContent = me.frequent_flyer_number;
+
+      if (!me.face_enrolled) {
+        document.getElementById('enrol-banner').classList.remove('hidden');
+        document.getElementById('enrol-action-label').textContent = 'Enrol biometrics';
+      }
+
+      // Bookings
+      const bl = document.getElementById('bookings-list');
+      if (!bookings.length) {
+        bl.innerHTML = '<div class="card" style="text-align:center;color:var(--text-muted)">No upcoming bookings</div>';
+      } else {
+        bl.innerHTML = bookings.map(b => `
+          <div class="card mb-2">
+            <div class="flight-route mb-2">
+              <div>
+                <div class="flight-iata">${b.flight.origin}</div>
+                <div style="font-size:.75rem;color:var(--text-muted)">${formatDate(b.flight.departure_time)}</div>
+              </div>
+              <div class="flight-line">
+                <div class="flight-number">${b.flight.flight_number}</div>
+                <hr>
+              </div>
+              <div style="text-align:right">
+                <div class="flight-iata">${b.flight.destination}</div>
+                <div style="font-size:.75rem;color:var(--text-muted)">${formatDate(b.flight.arrival_time)}</div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+              <div style="display:flex;gap:.75rem;font-size:.8rem;color:var(--text-muted)">
+                <span>🕐 ${formatTime(b.flight.departure_time)}</span>
+                <span>💺 ${b.seat_number} · ${b.seat_class}</span>
+                ${b.flight.gate ? `<span>🚪 Gate ${b.flight.gate}</span>` : ''}
+              </div>
+              ${statusBadge(b.status)}
+            </div>
+            <div style="margin-top:.75rem;display:flex;gap:.5rem">
+              <a href="/checkin.html"  class="btn btn-sm btn-primary ${b.status !== 'Confirmed' ? 'hidden' : ''}">Check in</a>
+              <a href="/boarding.html" class="btn btn-sm btn-ghost ${b.status !== 'CheckedIn'  ? 'hidden' : ''}">Board</a>
+              <span class="badge badge-success ${b.status !== 'Boarded' ? 'hidden' : ''}">✓ Boarded</span>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Logs
+      const ll = document.getElementById('logs-list');
+      if (!logs.length) {
+        ll.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:.875rem">No activity yet</div>';
+      } else {
+        const icons = { LOGIN:'🔑', ENROLL:'🔐', CHECKIN:'✈️', GATE_ACCESS:'🛂', BOARDING:'🚪', REGISTER:'👤', FACE_VERIFY:'👁️' };
+        ll.innerHTML = `<div style="display:flex;flex-direction:column;gap:.5rem">` +
+          logs.map(l => `
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem">
+              <span style="font-size:1.1rem">${icons[l.event_type] || '📋'}</span>
+              <div style="flex:1">
+                <div style="font-size:.85rem;font-weight:500">${l.event_type.replace('_',' ')}</div>
+                <div style="font-size:.75rem;color:var(--text-muted)">${l.location || formatDateTime(l.timestamp)}</div>
+              </div>
+              <span class="badge badge-${l.status === 'SUCCESS' ? 'success' : 'error'}" style="font-size:.7rem">${l.status}</span>
+            </div>
+          `).join('') + '</div>';
+      }
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  })();
+</script>
+</body>
+</html>
